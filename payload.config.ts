@@ -126,7 +126,7 @@ export default buildConfig({
       auth: true,
       access: {
         read: ({ req }) => req.user?.role === "owner",
-        create: ({ req }) => req.user?.role === "owner",
+        create: ({ req }) => !req.user || req.user?.role === "owner",
         update: ({ req }) => req.user?.role === "owner",
         delete: ({ req }) => req.user?.role === "owner",
       },
