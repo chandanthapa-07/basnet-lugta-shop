@@ -4,6 +4,9 @@ import { sqliteAdapter } from "@payloadcms/db-sqlite";
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000",
   secret: process.env.PAYLOAD_SECRET || "dev-secret-change-me",
+  admin: {
+    user: "admin-users",
+  },
   collections: [
     {
       slug: "products",
@@ -129,7 +132,6 @@ export default buildConfig({
       },
       fields: [
         { name: "name", type: "text", required: true, label: "Name" },
-        { name: "email", type: "email", required: true, unique: true, label: "Email" },
         { name: "role", type: "select", options: [
           { label: "Owner", value: "owner" },
           { label: "Admin", value: "admin" },
@@ -139,6 +141,6 @@ export default buildConfig({
   ],
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL || "file:./dev.db" },
-    migrationDir: "./migrations",
+    push: false,
   }),
 });

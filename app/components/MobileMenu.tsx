@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useStore } from "@/app/store/StoreProvider";
 import { useRouter } from "next/navigation";
 
@@ -30,14 +31,13 @@ export default function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClo
           className="flex items-center gap-3"
           onClick={onClose}
         >
-          <div
-            className="flex items-center justify-center rounded-lg"
-            style={{ width: 48, height: 48, background: "var(--primary)" }}
-          >
-            <span className="text-white text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>
-              B
-            </span>
-          </div>
+          <Image
+            src="/basnet-logo.jpeg"
+            alt="Basnet Lugta Shop logo"
+            width={1152}
+            height={768}
+            className="h-10 w-[60px] rounded-md object-contain"
+          />
           <div className="leading-tight">
             <div className="text-base font-bold tracking-tight" style={{ color: "var(--foreground)", fontFamily: "var(--font-display)" }}>
               Basnet Lugta Shop

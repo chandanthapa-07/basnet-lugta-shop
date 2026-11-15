@@ -23,7 +23,7 @@ export default function AuthModal() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/" + (mode === "signin" ? "login" : "register"), {
+      const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),

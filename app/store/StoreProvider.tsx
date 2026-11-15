@@ -123,10 +123,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as Partial<StoreState>;
-      if (Array.isArray(parsed.cart)) dispatch({ type: "CART_CLEAR" });
+      const parsed = JSON.parse(raw) as any;
+      if (Array.isArray(parsed.cart)) {
+        (parsed.cart as CartItem[]).forEach((item) => {
+          dispatch({
+            type: "CART_ADD",
+            payload: {
+              product: {
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                stock: item.stock || 99,
+                image: item.image,
+                category: "",
+                visible: true,
+                featured: false,
+              },
+              quantity: item.quantity,
+            },
+          });
+        });
+      }
       if (Array.isArray(parsed.wishlist)) {
-        parsed.wishlist.forEach((id: string) => dispatch({ type: "WISHLIST_TOGGLE", payload: { id } }));
+        (parsed.wishlist as string[]).forEach((id) => {
+          dispatch({ type: "WISHLIST_TOGGLE", payload: { id } });
+        });
       }
     } catch {
       /* ignore */
