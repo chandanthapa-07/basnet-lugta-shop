@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useStore, formatNPR } from "../store/StoreProvider";
+import { useStore, formatNPR } from "@/app/store/StoreProvider";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/components/Toast";
 
@@ -126,21 +126,31 @@ export default function BagDrawer() {
               Cash on delivery &middot; Shipping confirmed by phone.
             </p>
             <button
-              onClick={() => {
-                const token = localStorage.getItem("basnet-lugta-token");
-                if (!token) {
+              onClick={async () => {
+                try {
+                  // Check if user is authenticated via cookie
+                  const res = await fetch("/api/me", { credentials: "include" });
+                  if (!res.ok) {
+                    toast({
+                      title: "Sign in required",
+                      description: "Please sign in to place an order.",
+                      type: "warning",
+                      duration: 4000,
+                    });
+                    dispatch({ type: "OPEN_AUTH" });
+                    dispatch({ type: "CLOSE_BAG_DRAWER" });
+                    return;
+                  }
+                  dispatch({ type: "CLOSE_BAG_DRAWER" });
+                  router.push("/checkout");
+                } catch {
                   toast({
-                    title: "Sign in required",
-                    description: "Please sign in to place an order.",
-                    type: "warning",
+                    title: "Error",
+                    description: "Could not verify session. Please try again.",
+                    type: "error",
                     duration: 4000,
                   });
-                  dispatch({ type: "OPEN_AUTH" });
-                  dispatch({ type: "CLOSE_BAG_DRAWER" });
-                  return;
                 }
-                dispatch({ type: "CLOSE_BAG_DRAWER" });
-                router.push("/checkout");
               }}
               className="mt-4 w-full rounded-full py-3 text-sm font-semibold text-white"
               style={{ background: "var(--primary)" }}

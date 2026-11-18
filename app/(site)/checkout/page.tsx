@@ -32,18 +32,10 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("basnet-lugta-token");
-      if (!token) {
-        setError("Please sign in to place an order.");
-        return;
-      }
-
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           items: state.cart.map((item) => ({
             product: item.id,
@@ -123,7 +115,7 @@ export default function CheckoutPage() {
             Order placed successfully!
           </h2>
           <p className="mt-1 text-sm" style={{ color: "#57534e" }}>
-            Thank you for your purchase. We’ll confirm your order by phone shortly.
+            Thank you for your purchase. We'll confirm your order by phone shortly.
           </p>
           <Link
             href="/"
@@ -267,7 +259,7 @@ export default function CheckoutPage() {
               {loading ? "Placing order…" : "Place order"}
             </button>
             <p className="mt-2 text-xs text-center" style={{ color: "#57534e" }}>
-              Cash on delivery · Shipping confirmed by phone.
+              Cash on delivery &middot; Shipping confirmed by phone.
             </p>
           </form>
         </div>
@@ -288,7 +280,7 @@ export default function CheckoutPage() {
                       {item.name}
                     </div>
                     <div className="text-sm" style={{ color: "var(--primary)" }}>
-                      {formatNPR(item.price)} × {item.quantity}
+                      {formatNPR(item.price)} &times; {item.quantity}
                     </div>
                   </div>
                 </div>

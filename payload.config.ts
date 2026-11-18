@@ -1,12 +1,36 @@
 import { buildConfig } from "payload";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 
+let emailConfig: any = undefined;
+if (process.env.SMTP_HOST) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nodemailer = require("nodemailer");
+    emailConfig = {
+      transport: nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: process.env.SMTP_SECURE === "true",
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      }),
+      fromAddress: process.env.EMAIL_FROM || "Basnet Lugta Shop <noreply@basnetlugta.com>",
+      fromName: "Basnet Lugta Shop",
+    };
+  } catch {
+    emailConfig = undefined;
+  }
+}
+
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000",
   secret: process.env.PAYLOAD_SECRET || "dev-secret-change-me",
   admin: {
     user: "admin-users",
   },
+  email: emailConfig,
   collections: [
     {
       slug: "products",
@@ -118,6 +142,8 @@ export default buildConfig({
         { name: "name", type: "text", required: true, label: "Name" },
         { name: "email", type: "email", required: true, unique: true, label: "Email" },
         { name: "passwordHash", type: "text", label: "Password hash" },
+        { name: "passwordResetToken", type: "text", label: "Password reset token", admin: { hidden: true } },
+        { name: "passwordResetExpires", type: "text", label: "Password reset expires", admin: { hidden: true } },
       ],
     },
     {

@@ -1,24 +1,53 @@
-
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCustomerByEmail, getCustomerOrders } from "@/app/lib/payload";
+import { createHmac } from "crypto";
 
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Bearer ")) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const token = auth.slice(7);
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || "dev-secret-change-me";
+const COOKIE_NAME = "basnet-auth-token";
+
+function base64url(input: Buffer | string): string {
+  return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function verifyToken(token: string): { sub: string; email: string; role: string; name: string } | null {
   try {
     const parts = token.split(".");
-    if (parts.length !== 3) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
-    const email = payload?.email;
-    if (!email) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    const customer = await getCustomerByEmail(email);
-    if (!customer) return Response.json({ error: "Not found" }, { status: 404 });
-    const orders = await getCustomerOrders(String(customer.id));
-    return Response.json({ customer, orders });
+    if (parts.length !== 3) return null;
+    const [header, payload, signature] = parts;
+    const expectedSig = createHmac("sha256", JWT_SECRET).update(`${header}.${payload}`).digest();
+    if (base64url(expectedSig) !== signature) return null;
+    const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
+    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) return null;
+    return { sub: decoded.sub, email: decoded.email, role: decoded.role, name: decoded.name };
   } catch {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return null;
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const cookieToken = req.cookies.get(COOKIE_NAME)?.value;
+  const authHeader = req.headers.get("authorization");
+  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  
+  const token = cookieToken || headerToken;
+  
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const payload = verifyToken(token);
+  if (!payload) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const customer = await getCustomerByEmail(payload.email);
+    if (!customer) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const orders = await getCustomerOrders(String(customer.id));
+    return NextResponse.json({ customer, orders });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

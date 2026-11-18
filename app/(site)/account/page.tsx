@@ -12,15 +12,10 @@ export default function AccountPage() {
   const [unauth, setUnauth] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("basnet-lugta-token");
-    if (!token) {
-      setUnauth(true);
-      setLoading(false);
-      return;
-    }
     (async () => {
       try {
-        const res = await fetch("/api/me", { headers: { Authorization: `Bearer ${token}` } });
+        // Cookie is sent automatically with credentials
+        const res = await fetch("/api/me", { credentials: "include" });
         if (!res.ok) {
           setUnauth(true);
           return;
@@ -66,6 +61,14 @@ export default function AccountPage() {
 
   const { customer, orders } = data;
 
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
+    setUnauth(true);
+    setData(null);
+  };
+
   return (
     <section className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 py-12 sm:py-16">
       <div className="mb-10 flex items-center justify-between">
@@ -78,7 +81,7 @@ export default function AccountPage() {
           </p>
         </div>
         <button
-          onClick={() => { localStorage.removeItem("basnet-lugta-token"); setUnauth(true); setData(null); }}
+          onClick={handleSignOut}
           className="rounded-lg border px-4 py-2 text-sm font-medium"
           style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
         >

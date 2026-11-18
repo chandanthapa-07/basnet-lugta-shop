@@ -12,11 +12,9 @@ export default function AccountOrdersPage() {
   const [unauth, setUnauth] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("basnet-lugta-token");
-    if (!token) { setUnauth(true); setLoading(false); return; }
     (async () => {
       try {
-        const res = await fetch("/api/me", { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch("/api/me", { credentials: "include" });
         if (!res.ok) { setUnauth(true); return; }
         setData(await res.json());
       } catch { setUnauth(true); }
@@ -38,6 +36,12 @@ export default function AccountOrdersPage() {
 
   const orders = data.orders || [];
 
+  const handleSignOut = async () => {
+    try { await fetch("/api/auth/logout", { method: "POST", credentials: "include" }); } catch {}
+    setUnauth(true);
+    setData(null);
+  };
+
   return (
     <section className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 py-12 sm:py-16">
       <div className="mb-8 flex items-center justify-between">
@@ -45,7 +49,10 @@ export default function AccountOrdersPage() {
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: "var(--foreground)", fontFamily: "var(--font-display)" }}>My orders</h1>
           <p className="mt-1 text-sm" style={{ color: "#57534e" }}>Track your purchases and order history.</p>
         </div>
-        <Link href="/account" className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>← Back to profile</Link>
+        <div className="flex items-center gap-4">
+          <Link href="/account" className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>← Back to profile</Link>
+          <button onClick={handleSignOut} className="rounded-lg border px-4 py-2 text-sm font-medium" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>Sign out</button>
+        </div>
       </div>
 
       {orders.length === 0 ? (

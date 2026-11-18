@@ -1,41 +1,77 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "../store/StoreProvider";
+import { useStore } from "@/app/store/StoreProvider";
+import { useRouter } from "next/navigation";
 
 export default function AuthModal() {
   const { state, dispatch } = useStore();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const router = useRouter();
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   if (!state.isAuthModalOpen) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (mode === "signup" && password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
+    setSuccess(null);
+
+    if (mode === "signup") {
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
     }
+
+    if (mode === "forgot") {
+      if (!email) {
+        setError("Email is required.");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const res = await fetch("/api/auth", {
+      const endpoint = mode === "forgot" ? "/api/auth/forgot-password" : "/api/auth";
+      const body = mode === "signup" 
+        ? { email, password, name, confirmPassword }
+        : mode === "forgot"
+        ? { email }
+        : { email, password };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
+      
       if (!res.ok) {
         setError(data.error || "Something went wrong.");
         return;
       }
-      localStorage.setItem("basnet-lugta-token", data.token);
+
+      if (mode === "forgot") {
+        setSuccess("If an account exists, a password reset link has been sent.");
+        setTimeout(() => setMode("signin"), 3000);
+        return;
+      }
+
+      // Login or signup successful - token is in HttpOnly cookie
       dispatch({ type: "CLOSE_AUTH" });
       if (state.pendingAction) state.pendingAction();
+      router.refresh();
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -58,14 +94,19 @@ export default function AuthModal() {
             className="text-2xl font-bold"
             style={{ color: "var(--foreground)", fontFamily: "var(--font-display)" }}
           >
-            {mode === "signin" ? "Welcome back" : "Create account"}
+            {mode === "signin" ? "Welcome back" : mode === "signup" ? "Create account" : "Reset password"}
           </h2>
           <p className="mt-1 text-sm" style={{ color: "#57534e" }}>
-            Sign in to save favourites, add items to your bag and place orders.
+            {mode === "forgot" 
+              ? "Enter your email to receive a password reset link."
+              : mode === "signup"
+              ? "Create an account to save favourites, add items to your bag and place orders."
+              : "Sign in to save favourites, add items to your bag and place orders."}
           </p>
         </div>
+
         <form onSubmit={submit} className="flex flex-col gap-4">
-          {mode === "signup" && (
+          {mode !== "forgot" && mode === "signup" && (
             <input
               type="text"
               placeholder="Full name"
@@ -76,6 +117,7 @@ export default function AuthModal() {
               style={{ borderColor: "var(--border)" }}
             />
           )}
+
           <input
             type="email"
             placeholder="Email address"
@@ -85,35 +127,72 @@ export default function AuthModal() {
             className="rounded-lg border px-4 py-3 text-sm"
             style={{ borderColor: "var(--border)" }}
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="rounded-lg border px-4 py-3 text-sm"
-            style={{ borderColor: "var(--border)" }}
-          />
+
+          {(mode === "signin" || mode === "signup") && (
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="rounded-lg border px-4 py-3 text-sm"
+              style={{ borderColor: "var(--border)" }}
+            />
+          )}
+
+          {mode === "signup" && (
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="rounded-lg border px-4 py-3 text-sm"
+              style={{ borderColor: "var(--border)" }}
+            />
+          )}
+
           {error && <p className="text-sm" style={{ color: "var(--primary)" }}>{error}</p>}
+          {success && <p className="text-sm" style={{ color: "#10b981" }}>{success}</p>}
+
           <button
             type="submit"
             disabled={loading}
             className="rounded-full px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: "var(--primary)" }}
           >
-            {loading ? "Please wait…" : mode === "signin" ? "Sign in and continue" : "Create account and continue"}
+            {loading 
+              ? "Please wait…" 
+              : mode === "signin" 
+              ? "Sign in and continue" 
+              : mode === "signup" 
+              ? "Create account and continue"
+              : "Send reset link"}
           </button>
         </form>
+
         <p className="mt-4 text-center text-[10px] sm:text-xs" style={{ color: "#57534e" }}>
           Your customer account is separate from the private owner portal.
         </p>
-        <button
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-2 text-center text-sm font-medium"
-          style={{ color: "var(--primary)" }}
-        >
-          {mode === "signin" ? "No account? Create one" : "Already have an account? Sign in"}
-        </button>
+
+        <div className="mt-6 space-y-4 text-center">
+          {mode !== "forgot" && (
+            <button
+              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); setSuccess(null); }}
+              className="text-sm font-medium"
+              style={{ color: "var(--primary)" }}
+            >
+              {mode === "signin" ? "No account? Create one" : "Already have an account? Sign in"}
+            </button>
+          )}
+          <button
+            onClick={() => { setMode(mode === "forgot" ? "signin" : "forgot"); setError(null); setSuccess(null); }}
+            className="text-sm font-medium"
+            style={{ color: "var(--primary)" }}
+          >
+            {mode === "forgot" ? "Back to sign in" : "Forgot password?"}
+          </button>
+        </div>
       </div>
     </div>
   );
