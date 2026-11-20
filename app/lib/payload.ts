@@ -21,6 +21,7 @@ export async function getProducts() {
       sort: "-featured",
       limit: 100,
       pagination: false,
+      depth: 1,
     });
     return res.docs ?? [];
   } catch (e) {
@@ -74,7 +75,7 @@ export async function getProductsByCategory(category: string) {
 export async function getProduct(id: string) {
   try {
     const p = await getP();
-    return await p.findByID({ collection: "products", id });
+    return await p.findByID({ collection: "products", id, depth: 1 });
   } catch {
     return null;
   }
@@ -95,6 +96,7 @@ export async function getRelatedProducts(id: string, category: string, limit = 4
       sort: "-featured",
       limit,
       pagination: false,
+      depth: 1,
     });
     return res.docs ?? [];
   } catch {

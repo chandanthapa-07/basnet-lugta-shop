@@ -6,15 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "create-owner": "npx tsx scripts/create-owner.ts",
+    "fix-owner": "npx tsx scripts/fix-owner.ts",
+    "init-owner": "npx tsx scripts/init-owner.ts",
+    "seed-products": "node --experimental-strip-types scripts/seed-products.ts",
+    "inspect-products": "node --experimental-strip-types scripts/inspect-products.ts"
   },
   "dependencies": {
     "@payloadcms/db-sqlite": "^3.93.0",
     "@payloadcms/next": "^3.93.0",
+    "@supabase/server": "^1.9.2",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
-    "next": "16.4.3",
+    "next": "^16.4.6",
     "next-auth": "^4.24.15",
+    "nodemailer": "^7.0.13",
     "payload": "^3.93.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -24,6 +31,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/turbopack": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

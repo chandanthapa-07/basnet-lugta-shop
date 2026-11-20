@@ -24,12 +24,31 @@ export default function AuthModal() {
     setSuccess(null);
 
     if (mode === "signup") {
+      if (!name || name.trim().length < 2) {
+        setError("Please enter your full name.");
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError("Please enter a valid email address.");
+        return;
+      }
       if (password.length < 8) {
         setError("Password must be at least 8 characters.");
         return;
       }
       if (password !== confirmPassword) {
         setError("Passwords do not match.");
+        return;
+      }
+    }
+
+    if (mode === "signin") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+      if (!password) {
+        setError("Please enter your password.");
         return;
       }
     }
@@ -53,6 +72,7 @@ export default function AuthModal() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -71,7 +91,7 @@ export default function AuthModal() {
       // Login or signup successful - token is in HttpOnly cookie
       dispatch({ type: "CLOSE_AUTH" });
       if (state.pendingAction) state.pendingAction();
-      router.refresh();
+      router.push("/");
     } catch {
       setError("Network error. Please try again.");
     } finally {

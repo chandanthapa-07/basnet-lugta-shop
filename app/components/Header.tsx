@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useStore } from "@/app/store/StoreProvider";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MobileMenu from "@/app/components/MobileMenu";
 
@@ -18,6 +18,8 @@ export default function Header() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const bagCount = state.cart.reduce((s, i) => s + i.quantity, 0);
   const wishCount = state.wishlist.length;
@@ -27,6 +29,27 @@ export default function Header() {
     const q = searchQuery.trim();
     if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
   };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {
+      // ignore
+    }
+    dispatch({ type: "SET_USER", payload: { user: null, isAuthenticated: false } });
+    setIsProfileOpen(false);
+    router.push("/");
+  };
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -107,14 +130,75 @@ export default function Header() {
                 )}
               </button>
 
-              <button
-                aria-label="Account"
-                onClick={() => dispatch({ type: "OPEN_AUTH" })}
-                className="hidden md:flex h-10 items-center justify-center rounded-full border bg-white px-4 text-sm font-medium"
-                style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-              >
-                Account
-              </button>
+              <div className="relative" ref={profileRef}>
+                <button
+                  aria-label="Profile"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="hidden md:flex h-10 w-10 items-center justify-center rounded-full border bg-white"
+                  style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
+                >
+                  {state.isAuthenticated && state.user ? (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>
+                      {state.user.name?.charAt(0)?.toUpperCase() || "U"}
+                    </span>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M20 21a8 8 0 1 0-16 0" />
+                    </svg>
+                  )}
+                </button>
+
+                {isProfileOpen && (
+                  <div className="absolute right-0 top-12 w-64 rounded-2xl border bg-white shadow-xl z-50 py-2" style={{ borderColor: "var(--border)" }}>
+                    {state.isAuthenticated && state.user ? (
+                      <>
+                        <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+                          <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>{state.user.name}</p>
+                          <p className="text-xs" style={{ color: "#57534e" }}>{state.user.email}</p>
+                          {state.user.role !== "customer" && (
+                            <p className="text-xs mt-1 font-medium" style={{ color: "var(--primary)" }}>{state.user.role?.toUpperCase()}</p>
+                          )}
+                        </div>
+                        <Link href="/account" className="block px-4 py-2 text-sm hover:bg-stone-50" style={{ color: "var(--foreground)" }} onClick={() => setIsProfileOpen(false)}>
+                          My Profile
+                        </Link>
+                        <Link href="/account/orders" className="block px-4 py-2 text-sm hover:bg-stone-50" style={{ color: "var(--foreground)" }} onClick={() => setIsProfileOpen(false)}>
+                          My Orders
+                        </Link>
+                        <Link href="/wishlist" className="block px-4 py-2 text-sm hover:bg-stone-50" style={{ color: "var(--foreground)" }} onClick={() => setIsProfileOpen(false)}>
+                          My Wishlist
+                        </Link>
+                        {state.user.role !== "customer" && (
+                          <Link href="/admin" className="block px-4 py-2 text-sm hover:bg-stone-50" style={{ color: "var(--primary)" }} onClick={() => setIsProfileOpen(false)}>
+                            Admin Dashboard
+                          </Link>
+                        )}
+                        <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-stone-50" style={{ color: "var(--primary)" }}>
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { setIsProfileOpen(false); dispatch({ type: "OPEN_AUTH" }); }}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-stone-50"
+                          style={{ color: "var(--foreground)" }}
+                        >
+                          Sign in
+                        </button>
+                        <button
+                          onClick={() => { setIsProfileOpen(false); dispatch({ type: "OPEN_AUTH" }); }}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-stone-50"
+                          style={{ color: "var(--foreground)" }}
+                        >
+                          Create account
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <button
                 aria-label="Shopping bag"

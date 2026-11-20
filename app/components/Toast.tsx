@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
-
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -93,23 +92,35 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [state, dispatch] = useReducer(reducer, { toasts: [] });
   const [openToasts, setOpenToasts] = useState<Set<string>>(new Set());
+  const timeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const clearToastTimer = useCallback((toastId: string) => {
+    if (timeoutsRef.current[toastId]) {
+      clearTimeout(timeoutsRef.current[toastId]);
+      delete timeoutsRef.current[toastId];
+    }
+  }, []);
+
+  const setToastTimer = useCallback((toast: Toast) => {
+    clearToastTimer(toast.id);
+    timeoutsRef.current[toast.id] = setTimeout(() => {
+      dispatch({ type: "DISMISS_TOAST", toastId: toast.id });
+    }, toast.duration ?? TOAST_REMOVE_DELAY);
+  }, [clearToastTimer]);
 
   useEffect(() => {
-    const timeouts: Record<string, ReturnType<typeof setTimeout>> = {};
-
     state.toasts.forEach((toast) => {
       if (openToasts.has(toast.id)) return;
-      setOpenToasts((prev) => new Set(prev).add(toast.id));
-
-      timeouts[toast.id] = setTimeout(() => {
-        dispatch({ type: "DISMISS_TOAST", toastId: toast.id });
-      }, toast.duration ?? TOAST_REMOVE_DELAY);
+      setOpenToasts((prev: Set<string>) => new Set(prev).add(toast.id));
+      setToastTimer(toast);
     });
+  }, [state.toasts, openToasts, setToastTimer]);
 
+  useEffect(() => {
     return () => {
-      Object.values(timeouts).forEach((t) => clearTimeout(t));
+      Object.values(timeoutsRef.current).forEach((t) => clearTimeout(t));
     };
-  }, [state.toasts, openToasts]);
+  }, []);
 
   const toast = useCallback(
     ({ title, description, type = "info", duration }: ToastProps) => {
@@ -124,12 +135,14 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 
   const dismiss = useCallback((toastId: string) => {
+    clearToastTimer(toastId);
     dispatch({ type: "DISMISS_TOAST", toastId });
-  }, []);
+  }, [clearToastTimer]);
 
   const remove = useCallback((toastId: string) => {
+    clearToastTimer(toastId);
     dispatch({ type: "REMOVE_TOAST", toastId });
-  }, []);
+  }, [clearToastTimer]);
 
   const context = useMemo(
     () => ({

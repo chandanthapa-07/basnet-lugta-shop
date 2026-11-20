@@ -24,6 +24,13 @@ export interface StoredProduct {
   featured: boolean;
 }
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "customer" | "admin" | "owner";
+}
+
 type StoreState = {
   cart: CartItem[];
   wishlist: string[];
@@ -32,6 +39,9 @@ type StoreState = {
   isAuthModalOpen: boolean;
   isBagDrawerOpen: boolean;
   pendingAction: (() => void) | null;
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isAuthLoading: boolean;
 };
 
 type StoreAction =
@@ -45,7 +55,9 @@ type StoreAction =
   | { type: "OPEN_AUTH"; payload?: (() => void) | null }
   | { type: "CLOSE_AUTH" }
   | { type: "OPEN_BAG_DRAWER" }
-  | { type: "CLOSE_BAG_DRAWER" };
+  | { type: "CLOSE_BAG_DRAWER" }
+  | { type: "SET_USER"; payload: { user: AuthUser | null; isAuthenticated: boolean } }
+  | { type: "SET_AUTH_LOADING"; payload: boolean };
 
 const initialState: StoreState = {
   cart: [],
@@ -55,6 +67,9 @@ const initialState: StoreState = {
   isAuthModalOpen: false,
   isBagDrawerOpen: false,
   pendingAction: null,
+  user: null,
+  isAuthenticated: false,
+  isAuthLoading: true,
 };
 
 function reducer(state: StoreState, action: StoreAction): StoreState {
@@ -104,6 +119,10 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       return { ...state, isBagDrawerOpen: true };
     case "CLOSE_BAG_DRAWER":
       return { ...state, isBagDrawerOpen: false };
+    case "SET_USER":
+      return { ...state, user: action.payload.user, isAuthenticated: action.payload.isAuthenticated, isAuthLoading: false };
+    case "SET_AUTH_LOADING":
+      return { ...state, isAuthLoading: action.payload };
     default:
       return state;
   }
@@ -153,6 +172,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          dispatch({
+            type: "SET_USER",
+            payload: {
+              user: {
+                id: data.customer.id,
+                name: data.customer.name,
+                email: data.customer.email,
+                role: "customer",
+              },
+              isAuthenticated: true,
+            },
+          });
+        } else {
+          dispatch({
+            type: "SET_USER",
+            payload: { user: null, isAuthenticated: false },
+          });
+        }
+      } catch {
+        dispatch({
+          type: "SET_USER",
+          payload: { user: null, isAuthenticated: false },
+        });
+      }
+    }
+    checkAuth();
   }, []);
 
   useEffect(() => {

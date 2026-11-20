@@ -1,5 +1,6 @@
 import { buildConfig } from "payload";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
+import sharp from "sharp";
 
 let emailConfig: any = undefined;
 if (process.env.SMTP_HOST) {
@@ -27,6 +28,7 @@ if (process.env.SMTP_HOST) {
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000",
   secret: process.env.PAYLOAD_SECRET || "dev-secret-change-me",
+  sharp: sharp,
   admin: {
     user: "admin-users",
   },
@@ -39,10 +41,28 @@ export default buildConfig({
       admin: { useAsTitle: "name" },
       fields: [
         { name: "name", type: "text", required: true, label: "Name" },
+        { name: "slug", type: "text", required: true, unique: true, label: "Slug" },
+        { name: "sku", type: "text", required: true, unique: true, label: "SKU" },
         { name: "price", type: "number", required: true, min: 0, label: "Price (NPR)" },
+        {
+          name: "discountPrice",
+          type: "number",
+          min: 0,
+          label: "Discount Price (NPR)",
+        },
         { name: "stock", type: "number", required: true, min: 0, defaultValue: 0, label: "Stock" },
         {
-          name: "category", type: "select", required: true, label: "Category",
+          name: "lowStockThreshold",
+          type: "number",
+          min: 0,
+          defaultValue: 5,
+          label: "Low Stock Threshold",
+        },
+        {
+          name: "category",
+          type: "select",
+          required: true,
+          label: "Category",
           options: [
             { label: "Robes", value: "Robes" },
             { label: "Shawls & Wraps", value: "Shawls & Wraps" },
@@ -50,10 +70,22 @@ export default buildConfig({
             { label: "Accessories", value: "Accessories" },
           ],
         },
+        {
+          name: "sizes",
+          type: "array",
+          label: "Available Sizes",
+          fields: [{ name: "size", type: "text", required: true, label: "Size" }],
+        },
+        {
+          name: "colors",
+          type: "array",
+          label: "Available Colors",
+          fields: [{ name: "color", type: "text", required: true, label: "Color" }],
+        },
         { name: "badge", type: "text", label: "Badge" },
         { name: "description", type: "textarea", label: "Description" },
         { name: "image", type: "upload", relationTo: "media", required: true, label: "Image" },
-        { name: "visible", type: "checkbox", defaultValue: true, label: "Visible in shop" },
+        { name: "visible", type: "checkbox", defaultValue: true, label: "Published" },
         { name: "featured", type: "checkbox", defaultValue: false, label: "Featured" },
       ],
     },
