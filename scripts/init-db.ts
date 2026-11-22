@@ -114,12 +114,39 @@ try {
       password_hash TEXT,
       password_reset_token TEXT,
       password_reset_expires TEXT,
+      phone TEXT,
       updated_by INTEGER,
       created_by INTEGER
     );
   `).run();
 
-  // admin_users table
+  // customer_addresses table
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS customer_addresses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      customer_id INTEGER NOT NULL,
+      label TEXT NOT NULL DEFAULT 'Home',
+      recipient_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      province TEXT NOT NULL,
+      district TEXT NOT NULL,
+      municipality TEXT NOT NULL,
+      ward_number TEXT NOT NULL,
+      street_tole TEXT NOT NULL,
+      house_landmark TEXT,
+      delivery_instructions TEXT,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+  `).run();
+
+  db.prepare(`
+    CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer_id ON customer_addresses(customer_id);
+  `).run();
+
+// admin_users table
   db.prepare(`
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -269,7 +296,7 @@ try {
   }
 
   console.log("Database initialized successfully!");
-  console.log("Tables created: media, products, customers, admin_users, orders, orders_items, stock_movements, stock_alerts, product_reviews, payload_migrations");
+  console.log("Tables created: media, products, customers, customer_addresses, admin_users, orders, orders_items, stock_movements, stock_alerts, product_reviews, payload_migrations");
 } catch (error: any) {
   console.error("Failed to initialize database:", error?.message || error);
   process.exit(1);

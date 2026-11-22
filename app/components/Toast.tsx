@@ -8,7 +8,6 @@ import {
   useMemo,
   useReducer,
   useRef,
-  useState,
   type ReactNode,
 } from "react";
 
@@ -79,12 +78,6 @@ function reducer(state: ToastState, action: ToastAction): ToastState {
         toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
       };
     case "DISMISS_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toastId ? { ...t, duration: 0 } : t
-        ),
-      };
     case "REMOVE_TOAST":
       return {
         ...state,
@@ -101,30 +94,31 @@ interface ToastProviderProps {
 
 export function ToastProvider({ children }: ToastProviderProps) {
   const [state, dispatch] = useReducer(reducer, { toasts: [] });
-  const [openToasts, setOpenToasts] = useState<Set<string>>(new Set());
   const timeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const clearToastTimer = useCallback((toastId: string) => {
-    if (timeoutsRef.current[toastId]) {
-      clearTimeout(timeoutsRef.current[toastId]);
+    const timer = timeoutsRef.current[toastId];
+    if (timer) {
+      clearTimeout(timer);
       delete timeoutsRef.current[toastId];
     }
   }, []);
 
   const setToastTimer = useCallback((toast: Toast) => {
     clearToastTimer(toast.id);
+    const delay = toast.duration ?? TOAST_REMOVE_DELAY;
     timeoutsRef.current[toast.id] = setTimeout(() => {
-      dispatch({ type: "DISMISS_TOAST", toastId: toast.id });
-    }, toast.duration ?? TOAST_REMOVE_DELAY);
+      delete timeoutsRef.current[toast.id];
+      dispatch({ type: "REMOVE_TOAST", toastId: toast.id });
+    }, delay);
   }, [clearToastTimer]);
 
   useEffect(() => {
     state.toasts.forEach((toast) => {
-      if (openToasts.has(toast.id)) return;
-      setOpenToasts((prev: Set<string>) => new Set(prev).add(toast.id));
+      if (timeoutsRef.current[toast.id]) return;
       setToastTimer(toast);
     });
-  }, [state.toasts, openToasts, setToastTimer]);
+  }, [state.toasts, setToastTimer]);
 
   useEffect(() => {
     return () => {
@@ -171,9 +165,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
         className="fixed top-24 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
         style={{ top: 80 }}
       >
-        {state.toasts
-          .filter((t) => openToasts.has(t.id))
-          .map((t) => {
+        {state.toasts.map((t) => {
             const styles = toastTypeStyles[t.type];
             return (
               <ToastElement
