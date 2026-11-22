@@ -74,8 +74,14 @@ const CheckoutSchema = z.object({
     address: z.string().min(1, "Address is required"),
     landmark: z.string().optional(),
     note: z.string().optional(),
+    province: z.string().optional(),
+    municipality: z.string().optional(),
+    ward_number: z.string().optional(),
+    street_tole: z.string().optional(),
   }),
   paymentMethod: z.enum(["cash_on_delivery"]).default("cash_on_delivery"),
+  saveAddress: z.boolean().optional(),
+  addressLabel: z.enum(["Home", "Office", "Other"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -259,6 +265,34 @@ export async function POST(req: NextRequest) {
           item.quantity,
           item.image
         );
+      }
+
+      // Save address to customer profile if requested
+      if (saveAddress && customerId) {
+        const { province, municipality, ward_number, street_tole, addressLabel } = shipping;
+        if (street_tole && municipality && ward_number && province) {
+          const existingDefault = db
+            .prepare(`SELECT id FROM customer_addresses WHERE customer_id = ? AND is_default = 1`)
+            .get(customerId) as { id: number } | undefined;
+          const isDefault = !existingDefault ? 1 : 0;
+          if (addressLabel && !existingDefault) {
+            db.prepare(`UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?`).run(customerId);
+          }
+          db.prepare(`INSERT INTO customer_addresses (customer_id, label, recipient_name, phone, province, district, municipality, ward_number, street_tole, house_landmark, delivery_instructions, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+            customerId,
+            addressLabel || "Home",
+            shipping.name,
+            shipping.phone,
+            province,
+            shipping.district || "",
+            municipality,
+            ward_number,
+            street_tole,
+            shipping.landmark || null,
+            shipping.note || null,
+            isDefault
+          );
+        }
       }
 
       return { orderId, orderNumber, customerId, subtotal, total, items: validatedItems };

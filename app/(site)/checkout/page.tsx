@@ -1,17 +1,35 @@
 "use client";
 
 import { useStore, formatNPR } from "@/app/store/StoreProvider";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { useToast } from "@/app/components/Toast";
+
+interface SavedAddress {
+  id: number;
+  label: string;
+  recipientName: string;
+  phone: string;
+  province: string;
+  district: string;
+  municipality: string;
+  wardNumber: string;
+  streetTole: string;
+  houseLandmark: string | null;
+  deliveryInstructions: string | null;
+  isDefault: boolean;
+}
 
 export default function CheckoutPage() {
   const { state, dispatch } = useStore();
+  const { toast } = useToast();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -20,18 +38,74 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [landmark, setLandmark] = useState("");
   const [note, setNote] = useState("");
+  const [province, setProvince] = useState("");
+  const [municipality, setMunicipality] = useState("");
+  const [wardNumber, setWardNumber] = useState("");
+  const [streetTole, setStreetTole] = useState("");
+  const [addressLabel, setAddressLabel] = useState<"Home" | "Office" | "Other">("Home");
+
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [addressesLoading, setAddressesLoading] = useState(true);
 
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const res = await fetch("/api/me", { credentials: "include" });
+      if (res.ok) {
+        const json = await res.json();
+        setSavedAddresses(json.customer?.addresses || []);
+        const defaultAddr = json.customer?.addresses?.find((a: any) => a.isDefault);
+        if (defaultAddr && !selectedAddressId) {
+          setSelectedAddressId(defaultAddr.id);
+          setName(defaultAddr.recipientName);
+          setPhone(defaultAddr.phone);
+          setDistrict(defaultAddr.district);
+          setAddress(`${defaultAddr.streetTole}, Ward ${defaultAddr.wardNumber}, ${defaultAddr.municipality}, ${defaultAddr.province}${defaultAddr.houseLandmark ? `, ${defaultAddr.houseLandmark}` : ""}`);
+          setEmail(defaultAddr.phone ? "" : "");
+        }
+      }
+    } catch {}
+    finally { setAddressesLoading(false); }
+  }, [selectedAddressId]);
+
+  useEffect(() => {
+    fetchAddresses();
+  }, [fetchAddresses]);
+
+  const selectAddress = (id: number) => {
+    setSelectedAddressId(id);
+    const addr = savedAddresses.find((a) => a.id === id);
+    if (addr) {
+      setName(addr.recipientName);
+      setPhone(addr.phone);
+      setDistrict(addr.district);
+      setProvince(addr.province);
+      setMunicipality(addr.municipality);
+      setWardNumber(addr.wardNumber);
+      setStreetTole(addr.streetTole);
+      setAddressLabel(addr.label as "Home" | "Office" | "Other");
+      setAddress(`${addr.streetTole}, Ward ${addr.wardNumber}, ${addr.municipality}, ${addr.province}${addr.houseLandmark ? `, ${addr.houseLandmark}` : ""}`);
+      setEmail("");
+      setShowAddressForm(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (submitting) return;
 
     if (!name || !phone || !address) {
       setError("Name, phone, and address are required.");
       return;
     }
 
+    setSubmitting(true);
     setLoading(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -55,7 +129,13 @@ export default function CheckoutPage() {
             address,
             landmark,
             note,
+            province,
+            municipality,
+            ward_number: wardNumber,
+            street_tole: streetTole,
           },
+          saveAddress: saveAddress && !selectedAddressId,
+          addressLabel,
         }),
       });
 
@@ -74,6 +154,7 @@ export default function CheckoutPage() {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
+      setSubmitting(false);
     }
   };
 
