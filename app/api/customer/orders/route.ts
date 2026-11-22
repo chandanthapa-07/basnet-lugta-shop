@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Database from "better-sqlite3";
-import { createHmac } from "crypto";
 import { readFileSync } from "fs";
+import { verifyToken, getTokenFromRequest } from "@/app/lib/auth";
 
 function loadEnvFile(filePath: string): void {
   try {
@@ -27,40 +27,15 @@ function loadEnvFile(filePath: string): void {
 loadEnvFile(".env.local");
 
 const DB_PATH = process.env.DATABASE_URL?.replace(/^file:/, "") || "./dev.db";
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "dev-secret-change-me";
-
-function base64url(input: Buffer | string): string {
-  return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function verifyCustomerToken(token: string): { sub: string; email: string; role: string; name: string } | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const [header, payloadB64, signature] = parts;
-    const expectedSig = createHmac("sha256", JWT_SECRET).update(`${header}.${payloadB64}`).digest();
-    if (base64url(expectedSig) !== signature) return null;
-    const decoded = JSON.parse(Buffer.from(payloadB64, "base64").toString());
-    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) return null;
-    if (decoded.role !== "customer") return null;
-    return { sub: decoded.sub, email: decoded.email, role: decoded.role, name: decoded.name };
-  } catch {
-    return null;
-  }
-}
-
-async function authenticateCustomer(req: NextRequest) {
-  const cookieToken = req.cookies.get("basnet-auth-token")?.value;
-  const authHeader = req.headers.get("authorization");
-  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  const token = cookieToken || headerToken;
-  if (!token) return null;
-  return verifyCustomerToken(token);
-}
 
 export async function GET(req: NextRequest) {
-  const customer = await authenticateCustomer(req);
-  if (!customer) {
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return NextResponse.json({ error: "Customer authentication required" }, { status: 401 });
+  }
+
+  const payload = verifyToken(token);
+  if (!payload || payload.role !== "customer") {
     return NextResponse.json({ error: "Customer authentication required" }, { status: 401 });
   }
 
@@ -75,7 +50,7 @@ export async function GET(req: NextRequest) {
     // Find customer by email
     const customerRow = db
       .prepare(`SELECT id FROM customers WHERE email = ?`)
-      .get(customer.email) as { id: number } | undefined;
+      .get(payload.email) as { id: number } | undefined;
 
     if (!customerRow) {
       return NextResponse.json({ orders: [], pagination: { page, limit, total: 0, totalPages: 0 } });

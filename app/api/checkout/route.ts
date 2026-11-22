@@ -2,12 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import Database from "better-sqlite3";
 import { randomBytes } from "crypto";
-import { createHmac } from "crypto";
 import { readFileSync } from "fs";
-
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "dev-secret-change-me";
-const DB_PATH = process.env.DATABASE_URL?.replace(/^file:/, "") || "./dev.db";
-const SHIPPING_FEE = 150; // Flat shipping fee in NPR
+import { verifyToken, getTokenFromRequest } from "@/app/lib/auth";
 
 function loadEnvFile(filePath: string): void {
   try {
@@ -31,6 +27,9 @@ function loadEnvFile(filePath: string): void {
 }
 
 loadEnvFile(".env.local");
+
+const DB_PATH = process.env.DATABASE_URL?.replace(/^file:/, "") || "./dev.db";
+const SHIPPING_FEE = 150; // Flat shipping fee in NPR
 
 // In-memory idempotency store (use Redis in production)
 const idempotencyStore = new Map<string, { response: any; status: number; createdAt: number }>();
@@ -60,25 +59,6 @@ function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
   return true;
 }
 
-function base64url(input: Buffer | string): string {
-  return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function verifyToken(token: string): { sub: string; email: string; role: string; name: string } | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const [header, payload, signature] = parts;
-    const expectedSig = createHmac("sha256", JWT_SECRET).update(`${header}.${payload}`).digest();
-    if (base64url(expectedSig) !== signature) return null;
-    const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
-    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) return null;
-    return { sub: decoded.sub, email: decoded.email, role: decoded.role, name: decoded.name };
-  } catch {
-    return null;
-  }
-}
-
 const CheckoutSchema = z.object({
   items: z.array(
     z.object({
@@ -98,14 +78,6 @@ const CheckoutSchema = z.object({
   paymentMethod: z.enum(["cash_on_delivery"]).default("cash_on_delivery"),
 });
 
-function getToken(req: NextRequest): string | null {
-  const auth = req.headers.get("authorization");
-  if (auth?.startsWith("Bearer ")) return auth.slice(7);
-  const cookie = req.cookies.get("basnet-auth-token")?.value;
-  if (cookie) return cookie;
-  return null;
-}
-
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 
@@ -121,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const token = getToken(req);
+  const token = getTokenFromRequest(req);
   if (!token) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }

@@ -166,7 +166,10 @@ function ProductCard({
   const url = productImageUrl(product);
   const alt = product?.image?.alt || product?.name || "";
   const price = Number(product?.price ?? 0);
-  const inStock = Number(product?.stock ?? 0) > 0;
+  const stock = Number(product?.stock ?? 0);
+  const lowStockThreshold = Number(product?.lowStockThreshold ?? 5);
+  const inStock = stock > 0;
+  const isLowStock = inStock && stock <= lowStockThreshold;
   const id = String(product.id);
 
   return (
@@ -197,6 +200,11 @@ function ProductCard({
               Sold out
             </span>
           </>
+        )}
+        {isLowStock && (
+          <span className="pointer-events-none absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: "#b45309" }}>
+            Limited stock
+          </span>
         )}
 
         <button

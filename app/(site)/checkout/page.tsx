@@ -10,6 +10,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -63,6 +65,8 @@ export default function CheckoutPage() {
         return;
       }
 
+      setOrderId(String(data.orderId));
+      setOrderNumber(data.orderNumber);
       setSuccess(true);
       setStep(3);
       dispatch({ type: "CART_CLEAR" });
@@ -115,8 +119,17 @@ export default function CheckoutPage() {
             Order placed successfully!
           </h2>
           <p className="mt-1 text-sm" style={{ color: "#57534e" }}>
-            Thank you for your purchase. We'll confirm your order by phone shortly.
+            Thank you for your purchase. Your order <strong>{orderNumber}</strong> has been confirmed.
           </p>
+          {orderId && (
+            <Link
+              href={`/order-confirmation/${orderId}`}
+              className="mt-4 inline-flex items-center justify-center rounded-full border px-6 py-3 text-sm font-semibold transition-colors hover:bg-black/5"
+              style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
+            >
+              View order details
+            </Link>
+          )}
           <Link
             href="/"
             className="mt-6 inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white"

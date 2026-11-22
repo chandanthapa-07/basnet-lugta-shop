@@ -41,8 +41,8 @@ export default buildConfig({
       admin: { useAsTitle: "name" },
       fields: [
         { name: "name", type: "text", required: true, label: "Name" },
-        { name: "slug", type: "text", required: true, unique: true, label: "Slug" },
-        { name: "sku", type: "text", required: true, unique: true, label: "SKU" },
+        { name: "slug", type: "text", label: "Slug" },
+        { name: "sku", type: "text", label: "SKU" },
         { name: "price", type: "number", required: true, min: 0, label: "Price (NPR)" },
         {
           name: "discountPrice",

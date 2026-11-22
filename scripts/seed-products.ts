@@ -192,22 +192,23 @@ async function main() {
   let skipped = 0;
 
   for (const product of DEMO_PRODUCTS) {
-    // Idempotent: check if product with this SKU already exists
+    // Idempotent: check if product already exists by slug or name
+    const slug = product.slug || product.name.toLowerCase().replace(/\s+/g, "-");
     const existing = await payload.find({
       collection: "products",
-      where: { sku: { equals: product.sku } },
+      where: { slug: { equals: slug } },
       limit: 1,
       pagination: false,
     });
 
     if (existing.docs.length > 0) {
-      console.log(`⏭️  Skipping (already exists): ${product.sku}`);
+      console.log(`⏭️  Skipping (already exists): ${slug}`);
       skipped++;
       continue;
     }
 
     // Create placeholder image file
-    const imageFileName = `${product.sku}.png`;
+    const imageFileName = `${slug}.png`;
     const imagePath = join(UPLOADS_DIR, imageFileName);
     createPlaceholderImage(imagePath, product.imageColor, product.imageText);
 
@@ -225,8 +226,8 @@ async function main() {
       collection: "products",
       data: {
         name: product.name,
-        slug: product.slug,
-        sku: product.sku,
+        slug: slug,
+        sku: product.sku || undefined,
         description: product.description,
         price: product.price,
         discountPrice: product.discountPrice,
@@ -242,16 +243,16 @@ async function main() {
       },
     });
 
-    console.log(`✅ Created: ${product.sku} - ${product.name}`);
+    console.log(` Created: ${product.sku} - ${product.name}`);
     created++;
   }
 
-  console.log(`\n📊 Seed complete: ${created} created, ${skipped} skipped, ${DEMO_PRODUCTS.length} total`);
+  console.log(`\n Seed complete: ${created} created, ${skipped} skipped, ${DEMO_PRODUCTS.length} total`);
   console.log("\nAll seeded products are prefixed with '[DEMO]' and labeled as demonstration data.");
   process.exit(0);
 }
 
 main().catch((error) => {
-  console.error("❌ Seed failed:", error instanceof Error ? error.message : String(error));
+  console.error(" Seed failed:", error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

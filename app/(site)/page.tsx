@@ -1,4 +1,5 @@
 import { getProducts } from "@/app/lib/payload";
+import { redirect } from "next/navigation";
 import Hero from "@/app/components/Hero";
 import Benefits from "@/app/components/Benefits";
 import ShopSection from "@/app/components/ShopSection";
@@ -11,7 +12,12 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const products = q ? [] : await getProducts();
+
+  if (q) {
+    redirect(`/search?q=${encodeURIComponent(q)}`);
+  }
+
+  const products = await getProducts();
 
   return (
     <>

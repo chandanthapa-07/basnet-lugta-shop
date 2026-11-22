@@ -8,12 +8,14 @@ export default function ClientAddToCart({
   name,
   price,
   stock,
+  lowStockThreshold,
   image,
 }: {
   productId: string;
   name: string;
   price: number;
   stock: number;
+  lowStockThreshold?: number;
   image: string;
 }) {
   const { state, dispatch } = useStore();
@@ -23,6 +25,8 @@ export default function ClientAddToCart({
   const existing = state.cart.find((i) => i.id === productId);
   const inCart = !!existing;
   const cartQty = existing?.quantity ?? 0;
+  const inStock = stock > 0;
+  const isLowStock = inStock && lowStockThreshold !== undefined && stock <= lowStockThreshold;
 
   const handleAdd = useCallback(() => {
     dispatch({
@@ -72,6 +76,11 @@ export default function ClientAddToCart({
         {stock === 0 && (
           <span className="text-[10px] sm:text-xs font-medium" style={{ color: "var(--primary)" }}>
             Out of stock
+          </span>
+        )}
+        {isLowStock && (
+          <span className="text-[10px] sm:text-xs font-medium" style={{ color: "#b45309" }}>
+            Limited stock available ({stock} left)
           </span>
         )}
       </div>

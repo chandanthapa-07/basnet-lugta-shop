@@ -2,6 +2,7 @@ import { getProduct, getRelatedProducts, productImageUrl, productAlt, formatNPR 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ClientAddToCart from "./ClientAddToCart";
+import ProductReviews from "@/app/components/ProductReviews";
 
 export default async function ProductPage({
   params,
@@ -18,6 +19,10 @@ export default async function ProductPage({
   const related = await getRelatedProducts(id, product.category, 4);
   const imgUrl = productImageUrl(product);
   const alt = productAlt(product);
+  const stock = Number(product?.stock ?? 0);
+  const lowStockThreshold = Number(product?.lowStockThreshold ?? 5);
+  const inStock = stock > 0;
+  const isLowStock = inStock && stock <= lowStockThreshold;
 
   return (
     <section className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 py-8 sm:py-12 lg:py-16">
@@ -45,9 +50,14 @@ export default async function ProductPage({
               {product.badge}
             </span>
           )}
-          {product.stock === 0 && (
+          {!inStock && (
             <span className="absolute left-2 sm:left-3 top-2 sm:top-3 rounded-full bg-black/80 px-2 sm:px-3 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-white">
               Sold out
+            </span>
+          )}
+          {isLowStock && (
+            <span className="absolute right-2 sm:right-3 top-2 sm:top-3 rounded-full px-2 sm:px-3 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: "#b45309" }}>
+              Limited stock
             </span>
           )}
         </div>
@@ -71,6 +81,7 @@ export default async function ProductPage({
             name={product.name}
             price={Number(product.price ?? 0)}
             stock={Number(product.stock ?? 0)}
+            lowStockThreshold={Number(product.lowStockThreshold ?? 5)}
             image={imgUrl}
           />
         </div>
@@ -88,6 +99,8 @@ export default async function ProductPage({
           </div>
         </section>
       )}
+
+      <ProductReviews productId={String(product.id)} />
     </section>
   );
 }
@@ -96,6 +109,10 @@ function ProductCard({ product }: { product: any }) {
   const url = productImageUrl(product);
   const alt = productAlt(product);
   const price = Number(product.price ?? 0);
+  const stock = Number(product?.stock ?? 0);
+  const lowStockThreshold = Number(product?.lowStockThreshold ?? 5);
+  const inStock = stock > 0;
+  const isLowStock = inStock && stock <= lowStockThreshold;
 
   return (
     <Link href={`/products/${product.id}`} className="group flex flex-col">

@@ -54,7 +54,7 @@ async function main() {
   const name: string = process.env.INIT_OWNER_NAME || "Shop Owner";
 
   if (!email || !password) {
-    console.error("❌ Missing required environment variables:");
+    console.error(" Missing required environment variables:");
     console.error("   INIT_OWNER_EMAIL - Email for the owner account");
     console.error("   INIT_OWNER_PASSWORD - Password for the owner account (min 8 chars)");
     console.error("   INIT_OWNER_NAME (optional) - Display name for the owner");
@@ -62,12 +62,12 @@ async function main() {
   }
 
   if (password.length < 8) {
-    console.error("❌ Password must be at least 8 characters");
+    console.error(" Password must be at least 8 characters");
     process.exit(1);
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    console.error("❌ Invalid email format");
+    console.error(" Invalid email format");
     process.exit(1);
   }
 
@@ -80,7 +80,7 @@ async function main() {
       .get() as { id?: number; email?: string } | undefined;
 
     if (existingOwner) {
-      console.log("✅ Owner account already exists:", existingOwner.email);
+      console.log(" Owner account already exists:", existingOwner.email);
       console.log("   Skipping initialization. To create additional admins, use the admin panel.");
       process.exit(0);
     }
@@ -91,7 +91,7 @@ async function main() {
       .get(email) as { id?: number } | undefined;
 
     if (existingEmail) {
-      console.error("❌ An admin user with this email already exists");
+      console.error(" An admin user with this email already exists");
       process.exit(1);
     }
 
@@ -106,7 +106,7 @@ async function main() {
       VALUES (?, ?, 'owner', ?, ?, ?, ?, 0)
     `).run(name, email, hash, salt, now, now);
 
-    console.log("✅ Owner account created successfully!");
+    console.log(" Owner account created successfully!");
     console.log(`   Email: ${email}`);
     console.log(`   Name: ${name}`);
     console.log("   Role: owner");
@@ -114,7 +114,7 @@ async function main() {
     console.log("You can now log in to the admin panel at /admin");
     process.exit(0);
   } catch (error: any) {
-    console.error("❌ Failed to create owner account:", error?.message || error);
+    console.error(" Failed to create owner account:", error?.message || error);
     process.exit(1);
   } finally {
     db.close();

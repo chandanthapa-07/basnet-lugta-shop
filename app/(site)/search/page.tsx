@@ -1,5 +1,36 @@
-import { searchProducts, productImageUrl, productAlt, formatNPR } from "@/app/lib/payload";
 import Link from "next/link";
+import { productImageUrl, productAlt } from "@/app/lib/payload";
+
+interface SearchProduct {
+  id: number;
+  name: string;
+  slug: string | null;
+  sku: string | null;
+  price: number;
+  discountPrice: number | null;
+  stock: number;
+  lowStockThreshold: number;
+  category: string;
+  sizes: string[];
+  colors: string[];
+  badge: string | undefined;
+  description: string | undefined;
+  visible: number;
+  featured: number;
+  created_at: string;
+}
+
+interface SearchResponse {
+  products: SearchProduct[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  filters: Record<string, any>;
+}
 
 export default async function SearchPage({
   searchParams,
@@ -8,7 +39,7 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
   const query = q || "";
-  const products = query ? await searchProducts(query) : [];
+  const products: SearchProduct[] = query ? await searchProductsAPI(query) : [];
 
   return (
     <section className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 py-10 sm:py-12 lg:py-16">
@@ -42,13 +73,26 @@ export default async function SearchPage({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((p: any) => (
+          {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
       )}
     </section>
   );
+}
+
+async function searchProductsAPI(query: string): Promise<SearchProduct[]> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"}/api/products/search?q=${encodeURIComponent(query)}&limit=50`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) return [];
+    const data: SearchResponse = await res.json();
+    return data.products;
+  } catch {
+    return [];
+  }
 }
 
 function ProductCard({ product }: { product: any }) {
