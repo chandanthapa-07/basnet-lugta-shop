@@ -101,6 +101,7 @@ export default buildConfig({
       labels: { singular: "Media", plural: "Media" },
       access: { read: () => true },
       upload: {
+        staticDir: "public/uploads/seed",
         imageSizes: [
           { name: "thumbnail", width: 400, height: 400 },
           { name: "card", width: 600, height: 750 },
