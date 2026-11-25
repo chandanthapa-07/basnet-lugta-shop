@@ -154,7 +154,7 @@ export default function SettingsPage() {
     setAddressError(null);
     setAddressLoading(true);
 
-    const body: any = {
+    const body: Record<string, unknown> = {
       label: addrLabel,
       recipient_name: addrRecipient,
       phone: addrPhone,

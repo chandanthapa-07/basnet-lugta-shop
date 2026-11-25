@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
+  } catch (e) {
     console.error("reset-password error", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }

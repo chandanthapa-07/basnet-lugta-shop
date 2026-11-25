@@ -1,6 +1,7 @@
 import { getPayload } from "payload";
+import { Product, Customer, Order, OrderItem } from "./types";
 
-let initPromise: Promise<any> | null = null;
+let initPromise: Promise<Awaited<ReturnType<typeof getPayload>>> | null = null;
 
 async function getP() {
   if (!initPromise) {
@@ -12,7 +13,7 @@ async function getP() {
   return initPromise;
 }
 
-export async function getProducts() {
+export async function getProducts(): Promise<Product[]> {
   try {
     const p = await getP();
     const res = await p.find({
@@ -23,14 +24,14 @@ export async function getProducts() {
       pagination: false,
       depth: 1,
     });
-    return res.docs ?? [];
+    return (res.docs ?? []) as Product[];
   } catch (e) {
     console.error("getProducts failed", e);
     return [];
   }
 }
 
-export async function searchProducts(query: string) {
+export async function searchProducts(query: string): Promise<Product[]> {
   if (!query) return [];
   try {
     const p = await getP();
@@ -47,14 +48,14 @@ export async function searchProducts(query: string) {
       limit: 50,
       pagination: false,
     });
-    return res.docs ?? [];
+    return (res.docs ?? []) as Product[];
   } catch (e) {
     console.error("searchProducts failed", e);
     return [];
   }
 }
 
-export async function getProductsByCategory(category: string) {
+export async function getProductsByCategory(category: string): Promise<Product[]> {
   if (!category || category === "All clothing") return getProducts();
   try {
     const p = await getP();
@@ -65,23 +66,23 @@ export async function getProductsByCategory(category: string) {
       limit: 100,
       pagination: false,
     });
-    return res.docs ?? [];
+    return (res.docs ?? []) as Product[];
   } catch (e) {
     console.error("getProductsByCategory failed", e);
     return [];
   }
 }
 
-export async function getProduct(id: string) {
+export async function getProduct(id: string): Promise<Product | null> {
   try {
     const p = await getP();
-    return await p.findByID({ collection: "products", id, depth: 1 });
+    return (await p.findByID({ collection: "products", id, depth: 1 })) as Product | null;
   } catch {
     return null;
   }
 }
 
-export async function getRelatedProducts(id: string, category: string, limit = 4) {
+export async function getRelatedProducts(id: string, category: string, limit = 4): Promise<Product[]> {
   try {
     const p = await getP();
     const res = await p.find({
@@ -98,13 +99,13 @@ export async function getRelatedProducts(id: string, category: string, limit = 4
       pagination: false,
       depth: 1,
     });
-    return res.docs ?? [];
+    return (res.docs ?? []) as Product[];
   } catch {
     return [];
   }
 }
 
-export async function getCustomerByEmail(email: string) {
+export async function getCustomerByEmail(email: string): Promise<Customer | null> {
   try {
     const p = await getP();
     const res = await p.find({
@@ -113,13 +114,13 @@ export async function getCustomerByEmail(email: string) {
       limit: 1,
       pagination: false,
     });
-    return res.docs[0] ?? null;
+    return (res.docs[0] ?? null) as Customer | null;
   } catch {
     return null;
   }
 }
 
-export async function getCustomerOrders(customerId: string) {
+export async function getCustomerOrders(customerId: string): Promise<Order[]> {
   try {
     const p = await getP();
     const res = await p.find({
@@ -129,16 +130,16 @@ export async function getCustomerOrders(customerId: string) {
       limit: 50,
       pagination: false,
     });
-    return res.docs ?? [];
+    return (res.docs ?? []) as Order[];
   } catch {
     return [];
   }
 }
 
-export async function getOrderById(id: string) {
+export async function getOrderById(id: string): Promise<Order | null> {
   try {
     const p = await getP();
-    return await p.findByID({ collection: "orders", id });
+    return (await p.findByID({ collection: "orders", id })) as Order | null;
   } catch {
     return null;
   }
@@ -147,13 +148,7 @@ export async function getOrderById(id: string) {
 export async function createOrder(data: {
   orderNumber: string;
   customer: string;
-  items: Array<{
-    product: string;
-    name: string;
-    price: number;
-    quantity: number;
-    image: string;
-  }>;
+  items: OrderItem[];
   subtotal: number;
   shipping: {
     name: string;
@@ -186,7 +181,7 @@ export async function createOrder(data: {
   }
 }
 
-export function productImageUrl(product: any): string {
+export function productImageUrl(product: Product | { image?: string | { url?: string; sizes?: { card?: { url?: string }; thumbnail?: { url?: string } } } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return "";
   if (typeof img === "string") return img;
@@ -195,7 +190,7 @@ export function productImageUrl(product: any): string {
   return img.url ?? "";
 }
 
-export function productAlt(product: any): string {
+export function productAlt(product: Product | { image?: string | { alt?: string; url?: string } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return product?.name ?? "";
   if (typeof img === "string") return product?.name ?? "";

@@ -1,6 +1,7 @@
 import { getOrderById, formatNPR } from "@/app/lib/payload";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { OrderItem } from "@/app/lib/types";
 
 export default async function OrderConfirmationPage({
   params,
@@ -76,7 +77,7 @@ export default async function OrderConfirmationPage({
             Items
           </h4>
           <div className="space-y-4">
-            {(order.items ?? []).map((item: any, idx: number) => (
+            {(order.items ?? []).map((item: OrderItem, idx: number) => (
               <div key={idx} className="flex gap-4 border-b pb-4 last:border-none last:pb-0">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg" style={{ borderRadius: 12 }}>
                   {item.image ? (

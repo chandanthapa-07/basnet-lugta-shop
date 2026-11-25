@@ -3,8 +3,9 @@
 import { useStore } from "@/app/store/StoreProvider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Product } from "@/app/lib/types";
 
-function productImageUrl(product: any): string {
+function productImageUrl(product: Product | { image?: string | { url?: string; sizes?: { card?: { url?: string }; thumbnail?: { url?: string } } } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return "";
   if (typeof img === "string") return img;
@@ -13,16 +14,26 @@ function productImageUrl(product: any): string {
   return img.url ?? "";
 }
 
-function productAlt(product: any): string {
+function productAlt(product: Product | { image?: string | { alt?: string; url?: string } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return product?.name ?? "";
   if (typeof img === "string") return product?.name ?? "";
   return img.alt || product?.name || "";
 }
 
+interface WishlistProduct {
+  id: string | number;
+  name: string;
+  price: number;
+  stock: number;
+  category: string;
+  badge?: string | null;
+  image: string | { url?: string; alt?: string } | null;
+}
+
 export default function WishlistPage() {
   const { state, dispatch } = useStore();
-  const [wishlistProducts, setWishlistProducts] = useState<any[]>([]);
+  const [wishlistProducts, setWishlistProducts] = useState<WishlistProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,7 +42,7 @@ export default function WishlistPage() {
       try {
         const res = await fetch("/api/products");
         const all = await res.json();
-        const wishlisted = all.filter((p: any) => state.wishlist.includes(String(p.id)));
+        const wishlisted = (all as WishlistProduct[]).filter((p) => state.wishlist.includes(String(p.id)));
         if (mounted) {
           setWishlistProducts(wishlisted);
           setLoaded(true);
@@ -85,7 +96,7 @@ export default function WishlistPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {wishlistProducts.map((p: any) => (
+          {wishlistProducts.map((p) => (
             <WishlistCard key={p.id} product={p} onRemove={() => dispatch({ type: "WISHLIST_TOGGLE", payload: { id: String(p.id) } })} />
           ))}
         </div>
@@ -98,7 +109,7 @@ function WishlistCard({
   product,
   onRemove,
 }: {
-  product: any;
+  product: WishlistProduct;
   onRemove: () => void;
 }) {
   const url = productImageUrl(product);

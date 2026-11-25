@@ -156,7 +156,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 image: item.image,
                 category: "",
                 visible: true,
-                featured: false,
+                featured: true,
               },
               quantity: item.quantity,
             },

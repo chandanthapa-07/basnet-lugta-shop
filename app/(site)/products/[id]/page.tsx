@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ClientAddToCart from "./ClientAddToCart";
 import ProductReviews from "@/app/components/ProductReviews";
+import { Product } from "@/app/lib/types";
 
 export default async function ProductPage({
   params,
@@ -93,7 +94,7 @@ export default async function ProductPage({
             You may also like
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
-            {related.map((p: any) => (
+            {related.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
@@ -105,7 +106,7 @@ export default async function ProductPage({
   );
 }
 
-function ProductCard({ product }: { product: any }) {
+function ProductCard({ product }: { product: Product }) {
   const url = productImageUrl(product);
   const alt = productAlt(product);
   const price = Number(product.price ?? 0);

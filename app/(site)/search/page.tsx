@@ -29,7 +29,7 @@ interface SearchResponse {
     totalPages: number;
     hasMore: boolean;
   };
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
 }
 
 export default async function SearchPage({
@@ -95,7 +95,7 @@ async function searchProductsAPI(query: string): Promise<SearchProduct[]> {
   }
 }
 
-function ProductCard({ product }: { product: any }) {
+function ProductCard({ product }: { product: SearchProduct }) {
   const url = productImageUrl(product);
   const alt = productAlt(product);
   const price = Number(product.price ?? 0);

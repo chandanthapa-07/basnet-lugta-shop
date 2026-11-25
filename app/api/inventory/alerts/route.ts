@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
 
   try {
     let where = "1=1";
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (unreadOnly) {
       where += ` AND is_read = 0`;
@@ -136,8 +136,8 @@ export async function GET(req: NextRequest) {
       })),
       unreadCount: unreadCount.c,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch alerts" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to fetch alerts" }, { status: 500 });
   } finally {
     db.close();
   }

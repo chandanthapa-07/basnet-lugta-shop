@@ -27,6 +27,9 @@ function verifyToken(token: string): { sub: string; email: string; role: string;
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", pathname);
+
   // Protect /admin route - prevent customers from accessing admin
   if (pathname.startsWith("/admin")) {
     const token = req.cookies.get(COOKIE_NAME)?.value;
@@ -37,7 +40,7 @@ export async function middleware(req: NextRequest) {
       }
     }
     // Let Payload CMS handle admin authentication
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // Redirect authenticated users away from auth pages
@@ -54,7 +57,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {

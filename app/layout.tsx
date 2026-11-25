@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/app/store/StoreProvider";
@@ -21,11 +22,16 @@ export const metadata: Metadata = {
   description: "Buddhist clothing from Kathmandu, Nepal",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  if (pathname.startsWith("/admin")) {
+    return <>{children}</>;
+  }
   return (
     <html lang="en" className={`${dmSans.variable} ${manrope.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-white text-[var(--foreground)]">

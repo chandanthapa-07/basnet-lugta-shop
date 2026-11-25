@@ -4,10 +4,11 @@ import { formatNPR } from "@/app/store/StoreProvider";
 import { useStore } from "@/app/store/StoreProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Order } from "@/app/lib/types";
 
 export default function AccountOrdersPage() {
   const { dispatch } = useStore();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{ orders: Order[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [unauth, setUnauth] = useState(false);
 
@@ -74,7 +75,7 @@ export default function AccountOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {orders.map((o: any) => (
+              {orders.map((o) => (
                 <tr key={o.id} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
                   <td className="px-6 py-4"><Link href={`/order-confirmation/${o.id}`} className="text-sm font-medium" style={{ color: "var(--primary)" }}>{o.orderNumber}</Link></td>
                   <td className="px-6 py-4 text-sm" style={{ color: "#57534e" }}>{new Date(o.createdAt ?? "").toLocaleDateString("en-NP", { year: "numeric", month: "short", day: "numeric" })}</td>

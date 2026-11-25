@@ -51,12 +51,12 @@ async function main() {
   const password = process.env.INIT_OWNER_PASSWORD;
 
   if (!password) {
-    console.error("❌ Missing INIT_OWNER_PASSWORD environment variable");
+    console.error(" Missing INIT_OWNER_PASSWORD environment variable");
     process.exit(1);
   }
 
   if (password.length < 8) {
-    console.error("❌ Password must be at least 8 characters");
+    console.error(" Password must be at least 8 characters");
     process.exit(1);
   }
 
@@ -68,7 +68,7 @@ async function main() {
       .get(email) as { id?: number; email?: string } | undefined;
 
     if (!existing) {
-      console.error(`❌ No admin user found with email: ${email}`);
+      console.error(` No admin user found with email: ${email}`);
       console.log("   Create one first with: npm run create-owner");
       process.exit(1);
     }

@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { items, shipping, paymentMethod } = parsed.data;
+  const { items, shipping, paymentMethod, saveAddress, addressLabel } = parsed.data;
 
   const db = new Database(DB_PATH);
   db.pragma("busy_timeout = 5000");
@@ -269,7 +269,7 @@ export async function POST(req: NextRequest) {
 
       // Save address to customer profile if requested
       if (saveAddress && customerId) {
-        const { province, municipality, ward_number, street_tole, addressLabel } = shipping;
+        const { province, municipality, ward_number, street_tole } = shipping;
         if (street_tole && municipality && ward_number && province) {
           const existingDefault = db
             .prepare(`SELECT id FROM customer_addresses WHERE customer_id = ? AND is_default = 1`)

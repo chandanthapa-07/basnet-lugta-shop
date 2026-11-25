@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   try {
     let where = "visible = 1";
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (q) {
       where += ` AND (name LIKE ? OR description LIKE ? OR category LIKE ?)`;
@@ -163,8 +163,8 @@ export async function GET(req: NextRequest) {
         sort,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Search failed" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Search failed" }, { status: 500 });
   } finally {
     db.close();
   }

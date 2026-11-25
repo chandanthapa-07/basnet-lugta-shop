@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useStore } from "@/app/store/StoreProvider";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/app/components/Toast";
+import { Product, CartItem } from "@/app/lib/types";
 
 const CATEGORIES = [
   "All clothing",
@@ -13,7 +14,7 @@ const CATEGORIES = [
   "Accessories",
 ];
 
-function productImageUrl(product: any): string {
+function productImageUrl(product: Product | { image?: string | { url?: string; sizes?: { card?: { url?: string }; thumbnail?: { url?: string } } } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return "";
   if (typeof img === "string") return img;
@@ -22,22 +23,14 @@ function productImageUrl(product: any): string {
   return img.url ?? "";
 }
 
-export default function ShopSection({ products }: { products: any[] }) {
+export default function ShopSection({ products }: { products: Product[] }) {
   const { state, dispatch } = useStore();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState(state.activeCategory || "All clothing");
-  const [filteredProducts, setFilteredProducts] = useState(products);
 
-  useEffect(() => {
-    setActiveCategory(state.activeCategory || "All clothing");
-  }, [state.activeCategory]);
-
-  useEffect(() => {
-    if (activeCategory === "All clothing") {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter((p) => p.category === activeCategory));
-    }
+  const filteredProducts = useMemo(() => {
+    if (activeCategory === "All clothing") return products;
+    return products.filter((p) => p.category === activeCategory);
   }, [activeCategory, products]);
 
   const handleCategory = (c: string) => {
@@ -46,7 +39,7 @@ export default function ShopSection({ products }: { products: any[] }) {
   };
 
   const handleAddToCart = useCallback(
-    (product: any) => {
+    (product: Product) => {
       dispatch({
         type: "CART_ADD",
         payload: {
@@ -158,8 +151,8 @@ function ProductCard({
   onWishlistToggle,
   isWishlisted,
 }: {
-  product: any;
-  onAddToCart: (product: any) => void;
+  product: Product;
+  onAddToCart: (product: Product) => void;
   onWishlistToggle: (e: React.MouseEvent, id: string, name: string) => void;
   isWishlisted: boolean;
 }) {

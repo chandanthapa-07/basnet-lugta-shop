@@ -84,8 +84,8 @@ export async function GET(
         averageRating: summary.avg_rating ? Math.round(summary.avg_rating * 10) / 10 : 0,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch reviews" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to fetch reviews" }, { status: 500 });
   } finally {
     db.close();
   }

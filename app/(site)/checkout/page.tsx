@@ -58,7 +58,7 @@ export default function CheckoutPage() {
       if (res.ok) {
         const json = await res.json();
         setSavedAddresses(json.customer?.addresses || []);
-        const defaultAddr = json.customer?.addresses?.find((a: any) => a.isDefault);
+        const defaultAddr = json.customer?.addresses?.find((a) => a.isDefault);
         if (defaultAddr && !selectedAddressId) {
           setSelectedAddressId(defaultAddr.id);
           setName(defaultAddr.recipientName);
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
       }
     } catch {}
     finally { setAddressesLoading(false); }
-  }, [selectedAddressId]);
+  }, []);
 
   useEffect(() => {
     fetchAddresses();

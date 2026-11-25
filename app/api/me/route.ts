@@ -27,7 +27,7 @@ loadEnvFile(".env.local");
 const DB_PATH = process.env.DATABASE_URL?.replace(/^file:/, "") || "./dev.db";
 
 export async function GET(req: Request) {
-  const token = getTokenFromRequest(req as any);
+  const token = getTokenFromRequest(req as unknown as { cookies: { get: (name: string) => { value?: string } | undefined }; headers: { get: (name: string) => string | null } });
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
         name: customer.name,
         email: customer.email,
         phone: customer.phone || "",
-        addresses: addresses.map((a: any) => ({
+        addresses: addresses.map((a) => ({
           id: a.id,
           label: a.label,
           recipientName: a.recipient_name,

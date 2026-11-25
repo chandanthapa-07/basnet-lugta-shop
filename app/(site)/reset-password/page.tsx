@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -8,8 +8,8 @@ import Image from "next/image";
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [token, setToken] = useState("");
-  const [email, setEmail] = useState("");
+  const [token, setToken] = useState(searchParams.get("token") || "");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,17 +17,12 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [step, setStep] = useState<"verify" | "reset">("verify");
-
-  useEffect(() => {
+  const [step, setStep] = useState<"verify" | "reset">(() => {
     const t = searchParams.get("token") || "";
     const e = searchParams.get("email") || "";
-    if (t && e) {
-      setToken(t);
-      setEmail(e);
-      setStep("reset");
-    }
-  }, [searchParams]);
+    if (t && e) return "reset";
+    return "verify";
+  });
 
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
