@@ -50,8 +50,8 @@ export default function ShopSection({ products }: { products: Product[] }) {
             stock: Number(product.stock ?? 0),
             category: product.category,
             image: productImageUrl(product),
-            visible: product.visible,
-            featured: product.featured,
+            visible: Boolean(product.visible),
+            featured: Boolean(product.featured),
           },
           quantity: 1,
         },
@@ -157,7 +157,8 @@ function ProductCard({
   isWishlisted: boolean;
 }) {
   const url = productImageUrl(product);
-  const alt = product?.image?.alt || product?.name || "";
+  const img = product?.image;
+  const alt = (typeof img === "string" ? "" : img?.alt) || product?.name || "";
   const price = Number(product?.price ?? 0);
   const stock = Number(product?.stock ?? 0);
   const lowStockThreshold = Number(product?.lowStockThreshold ?? 5);

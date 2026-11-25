@@ -27,7 +27,14 @@ if (process.env.SMTP_HOST) {
 
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000",
-  secret: process.env.PAYLOAD_SECRET || "dev-secret-change-me",
+  secret: (() => {
+    const secret = process.env.PAYLOAD_SECRET;
+    if (secret) return secret;
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("PAYLOAD_SECRET is required in production");
+    }
+    return "dev-secret-do-not-use-in-production";
+  })(),
   sharp: sharp,
   admin: {
     user: "admin-users",

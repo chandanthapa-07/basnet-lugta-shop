@@ -28,7 +28,14 @@ function loadEnvFile(filePath: string): void {
 loadEnvFile(".env.local");
 
 const DB_PATH = process.env.DATABASE_URL?.replace(/^file:/, "") || "./dev.db";
-const JWT_SECRET = process.env.PAYLOAD_SECRET || process.env.NEXTAUTH_SECRET || "dev-secret-change-me";
+const JWT_SECRET: string = (() => {
+  const secret = process.env.PAYLOAD_SECRET || process.env.NEXTAUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("PAYLOAD_SECRET or NEXTAUTH_SECRET is required in production");
+  }
+  return "dev-secret-do-not-use-in-production";
+})();
 
 function base64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

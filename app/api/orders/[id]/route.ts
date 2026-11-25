@@ -41,7 +41,14 @@ function verifyAdminToken(token: string): { id: number; email: string; name: str
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const [headerB64, payloadB64, signature] = parts;
-    const rawSecret = process.env.PAYLOAD_SECRET || "dev-secret-change-me";
+    const rawSecret: string = (() => {
+      const secret = process.env.PAYLOAD_SECRET;
+      if (secret) return secret;
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("PAYLOAD_SECRET is required in production");
+      }
+      return "dev-secret-do-not-use-in-production";
+    })();
     const secretKey = derivePayloadSecret(rawSecret);
     const expectedSig = createHmac("sha256", secretKey).update(`${headerB64}.${payloadB64}`).digest();
     if (base64url(expectedSig) !== signature) return null;
@@ -99,7 +106,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         JOIN customers s ON o.customer_id = s.id
         WHERE o.id = ?
       `)
-      .get(id) as any;
+      .get(id) as { id: number; order_number: string; customer_id: number; subtotal: number; status: string; payment_status: string; payment_method: string; shipping_name: string; shipping_phone: string; shipping_district: string; shipping_email: string; shipping_address: string; shipping_landmark: string; shipping_note: string; created_at: string; updated_at: string; customer_name: string; customer_email: string } | undefined;
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -107,7 +114,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const items = db
       .prepare(`SELECT * FROM orders_items WHERE _order = ?`)
-      .all(id);
+      .all(id) as Array<{
+        id: string;
+        product_id: number;
+        name: string;
+        price: number;
+        quantity: number;
+        image: string | null;
+      }>;
 
     const shipping = 150;
     const total = order.subtotal + shipping;
@@ -168,7 +182,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       </tr>
     </thead>
     <tbody>
-      ${items.map((item: any) => `
+      ${items.map((item) => `
         <tr>
           <td>${item.name}</td>
           <td>${item.quantity}</td>
@@ -222,7 +236,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       shippingNote: order.shipping_note,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
-      items: items.map((item: any) => ({
+      items: items.map((item) => ({
         id: item.id,
         productId: item.product_id,
         name: item.name,
@@ -231,8 +245,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         image: item.image,
       })),
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch order" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to fetch order" }, { status: 500 });
   } finally {
     db.close();
   }

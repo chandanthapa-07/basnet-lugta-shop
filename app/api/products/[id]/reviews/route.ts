@@ -178,8 +178,8 @@ export async function POST(
       reviewId: Number(result.lastInsertRowid),
       message: "Review submitted successfully",
     }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to submit review" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to submit review" }, { status: 500 });
   } finally {
     db.close();
   }

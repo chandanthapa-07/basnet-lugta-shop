@@ -1,6 +1,13 @@
 import { createHmac } from "crypto";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "dev-secret-change-me";
+const JWT_SECRET: string = (() => {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXTAUTH_SECRET is required in production");
+  }
+  return "dev-secret-do-not-use-in-production";
+})();
 const COOKIE_NAME = "basnet-auth-token";
 const TOKEN_EXPIRY = 60 * 60 * 24 * 7; // 7 days
 

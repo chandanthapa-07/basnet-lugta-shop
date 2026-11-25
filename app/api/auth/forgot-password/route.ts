@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPayload } from "payload";
 import { createHmac, randomBytes } from "crypto";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "dev-secret-change-me";
+const JWT_SECRET: string = (() => {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXTAUTH_SECRET is required in production");
+  }
+  return "dev-secret-do-not-use-in-production";
+})();
 const RESET_TOKEN_EXPIRY = 60 * 60 * 1000; // 1 hour
 
 async function getP() {

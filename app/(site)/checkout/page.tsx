@@ -3,7 +3,7 @@
 import { useStore, formatNPR } from "@/app/store/StoreProvider";
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useToast } from "@/app/components/Toast";
+
 
 interface SavedAddress {
   id: number;
@@ -22,7 +22,6 @@ interface SavedAddress {
 
 export default function CheckoutPage() {
   const { state, dispatch } = useStore();
-  const { toast } = useToast();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +57,7 @@ export default function CheckoutPage() {
       if (res.ok) {
         const json = await res.json();
         setSavedAddresses(json.customer?.addresses || []);
-        const defaultAddr = json.customer?.addresses?.find((a) => a.isDefault);
+        const defaultAddr = json.customer?.addresses?.find((a: { isDefault: boolean }) => a.isDefault);
         if (defaultAddr && !selectedAddressId) {
           setSelectedAddressId(defaultAddr.id);
           setName(defaultAddr.recipientName);

@@ -18,6 +18,7 @@ interface SearchProduct {
   visible: number;
   featured: number;
   created_at: string;
+  image: string | { url?: string; alt?: string } | null;
 }
 
 interface SearchResponse {

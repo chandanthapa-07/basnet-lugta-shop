@@ -181,7 +181,7 @@ export async function createOrder(data: {
   }
 }
 
-export function productImageUrl(product: Product | { image?: string | { url?: string; sizes?: { card?: { url?: string }; thumbnail?: { url?: string } } } | null } | null | undefined): string {
+export function productImageUrl(product: { image?: string | { url?: string | null; sizes?: { card?: { url?: string | null }; thumbnail?: { url?: string | null } } | null } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return "";
   if (typeof img === "string") return img;
@@ -190,11 +190,12 @@ export function productImageUrl(product: Product | { image?: string | { url?: st
   return img.url ?? "";
 }
 
-export function productAlt(product: Product | { image?: string | { alt?: string; url?: string } | null } | null | undefined): string {
-  const img = product?.image;
-  if (!img) return product?.name ?? "";
-  if (typeof img === "string") return product?.name ?? "";
-  return img.alt || product?.name || "";
+export function productAlt(product: { name?: string | null; image?: string | { alt?: string | null; url?: string | null } | null } | null | undefined): string {
+  if (!product) return "";
+  const img = product.image;
+  if (!img) return product.name ?? "";
+  if (typeof img === "string") return product.name ?? "";
+  return img.alt || product.name || "";
 }
 
 export function formatNPR(amount: number): string {

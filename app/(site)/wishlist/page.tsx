@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Product } from "@/app/lib/types";
 
-function productImageUrl(product: Product | { image?: string | { url?: string; sizes?: { card?: { url?: string }; thumbnail?: { url?: string } } } | null } | null | undefined): string {
+function productImageUrl(product: { image?: string | { url?: string | null; sizes?: { card?: { url?: string | null }; thumbnail?: { url?: string | null } } | null } | null } | null | undefined): string {
   const img = product?.image;
   if (!img) return "";
   if (typeof img === "string") return img;
@@ -14,11 +14,12 @@ function productImageUrl(product: Product | { image?: string | { url?: string; s
   return img.url ?? "";
 }
 
-function productAlt(product: Product | { image?: string | { alt?: string; url?: string } | null } | null | undefined): string {
-  const img = product?.image;
-  if (!img) return product?.name ?? "";
-  if (typeof img === "string") return product?.name ?? "";
-  return img.alt || product?.name || "";
+function productAlt(product: { name?: string | null; image?: string | { alt?: string | null; url?: string | null } | null } | null | undefined): string {
+  if (!product) return "";
+  const img = product.image;
+  if (!img) return product.name ?? "";
+  if (typeof img === "string") return product.name ?? "";
+  return img.alt || product.name || "";
 }
 
 interface WishlistProduct {

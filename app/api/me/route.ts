@@ -70,7 +70,22 @@ export async function GET(req: Request) {
         name: customer.name,
         email: customer.email,
         phone: customer.phone || "",
-        addresses: addresses.map((a) => ({
+        addresses: (addresses as Array<{
+          id: number;
+          label: string;
+          recipient_name: string;
+          phone: string;
+          province: string;
+          district: string;
+          municipality: string;
+          ward_number: string;
+          street_tole: string;
+          house_landmark: string | null;
+          delivery_instructions: string | null;
+          is_default: number;
+          created_at: string;
+          updated_at: string;
+        }>).map((a) => ({
           id: a.id,
           label: a.label,
           recipientName: a.recipient_name,

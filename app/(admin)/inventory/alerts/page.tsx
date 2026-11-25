@@ -49,7 +49,7 @@ export default function InventoryAlertsPage() {
 
   useEffect(() => {
     fetchAlerts();
-  }, [unreadOnly]);
+  }, [unreadOnly, fetchAlerts, toast]);
 
   const markRead = async (alertId: string) => {
     try {
