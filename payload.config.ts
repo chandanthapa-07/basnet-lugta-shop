@@ -91,7 +91,7 @@ export default buildConfig({
         },
         { name: "badge", type: "text", label: "Badge" },
         { name: "description", type: "textarea", label: "Description" },
-        { name: "image", type: "upload", relationTo: "media", required: true, label: "Image" },
+        { name: "image", type: "upload", relationTo: "media", required: false, label: "Image" },
         { name: "visible", type: "checkbox", defaultValue: true, label: "Published" },
         { name: "featured", type: "checkbox", defaultValue: false, label: "Featured" },
       ],
@@ -101,7 +101,6 @@ export default buildConfig({
       labels: { singular: "Media", plural: "Media" },
       access: { read: () => true },
       upload: {
-        staticDir: "public/uploads/seed",
         imageSizes: [
           { name: "thumbnail", width: 400, height: 400 },
           { name: "card", width: 600, height: 750 },
